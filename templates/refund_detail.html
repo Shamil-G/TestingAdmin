@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ res_value('DETAIL_INFO') }}
+{% endblock %}
+
+{% block main_title %}
+    <h1  class="title">{{ res_value('DETAIL_INFO') }}</h1>
+{% endblock %}
+
+{% block body %}
+{% for el in cursor %}
+<div class="form_model_detail">
+    <table>
+        <tbody>
+            <tr>
+                <td><p class="title2">{{ res_value('ID_HIST') }}:</p></td>
+                <td><p class="title2">{{ el.id_hist }}</p></td>
+            </tr>
+            {% if is_admin == 'Y'  %}
+            <tr>
+                <td><p class="title2">{{ res_value('ID_USER') }}</p></td>
+                <td><p class="title2">{{ el.id_user }}</p></td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td><p class="title2">{{ res_value('DATE_OP') }}</p></td>
+                <td><p class="title2">{{ el.date_op }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SIOR_ID') }}</p></td>
+                <td><p class="title2">{{ el.sior_id }}</p></td>
+            </tr>
+            {% if is_admin == 'Y'  %}
+            <tr>
+                <td><p class="title2">{{ res_value('DELETED') }}</p></td>
+                <td><p class="title2">{{ el.deleted }}</p></td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td><p class="title2">{{ res_value('GFSS_IN_NOM') }}</p></td>
+                <td><p class="title2">{{ el.gfss_in_nom }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_DATE') }}</p></td>
+                <td><p class="title2">{{ el.doc_date }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('PERIOD') }}</p></td>
+                <td><p class="title2">{{ el.period }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SUM_GFSS') }}</p></td>
+                <td><p class="title2">{{ el.sum_gfss }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('P_BIN') }}</p></td>
+                <td><p class="title2">{{ el.p_bin }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('PAYER_NAME') }}</p></td>
+                <td><p class="title2">{{ el.p_name }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SICID') }}</p></td>
+                <td><p class="title2">{{ el.sicid }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('IIN') }}</p></td>
+                <td><p class="title2">{{ el.iin }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('FIO') }}</p></td>
+                <td><p class="title2">{{ el.fio }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_RET') }}</p></td>
+                <td><p class="title2">{{ el.doc_ret }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DATE_RET') }}</p></td>
+                <td><p class="title2">{{ el.date_ret }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SUM_RET') }}</p></td>
+                <td><p class="title2">{{ el.sum_ret }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DATE_RET_GK') }}</p></td>
+                <td><p class="title2">{{ el.date_ret_gk }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SUM_RET_GK') }}</p></td>
+                <td><p class="title2">{{ el.sum_ret_gk }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_NUM_DF') }}</p></td>
+                <td><p class="title2">{{ el.doc_num_df }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_DATE_DF') }}</p></td>
+                <td><p class="title2">{{ el.doc_date_df }}</p></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('REASON_RETURN') }}</p></td>
+                <td><p class="title2">{{ el.reason_return }}</p></td>
+            </tr>
+            <tr></tr>
+        </tbody>
+    </table>
+</div>
+<a href="/history_detail/{{ el.id_hist }}/del" class ="bt danger">{{ res_value('BUTTON_DELETE') }}</a>
+
+<!--        <tfoot>-->
+<!--            <a href="/model_detail/{{ cursor.id_model }}/upd" class ="bt success">{{ res_value('BUTTON_EDIT') }}</a>-->
+<!--<tr>-->
+<!--</tr>-->
+<!--        </tfoot>t-->
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ res_value('ADD_REFUND') }}
+{% endblock %}
+
+{% block main_title %}
+    <h1 class="title">{{ res_value('ADD_REFUND') }}</h1>
+{% endblock %}
+
+{% block body %}
+<form class="form_history_create" method="POST">
+<!--<form class="form_register" method="POST">-->
+    <table style="width: 50%">
+<!--        <tbody>-->
+            <tr>
+                <td><p class="title2">{{ res_value('SIOR_ID') }}:</p></td>
+                <td><input type="text" size="9" maxlength="11" name="sior_id" pattern="[0-9]{6,11}" placeholder="Номер заявки"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_RET') }}</p></td>
+                <td><input type="text" size="15" maxlength="30" name="doc_ret" placeholder="Номер платежки"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DATE_RET') }}</p></td>
+                <td><input type="date" class="input" name="date_ret" placeholder="Дата возвращенной платежки"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SUM_RET') }}</p></td>
+                <td><input class="input" maxlength="12" name="sum_ret" pattern="[0-9]{1,8}[,]{0,1}[0-9]{0,2}" placeholder="Возвращенная сумма"
+                           type="text"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DATE_RET_GK') }}</p></td>
+                <td><input type="date" class="input" name="date_ret_gk" placeholder="Дата возвращенной платежки"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('SUM_RET_GK') }}</p></td>
+                <td><input class="input" maxlength="12" name="sum_ret_gk" pattern="[0-9]{1,8}[,]{0,1}[0-9]{0,2}" placeholder="Возвращенная сумма"
+                           type="text"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_NUM_DF') }}</p></td>
+                <td><input type="text" size="30" maxlength="30" class="input" name="doc_num_df" placeholder="Номер письма ДФ"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('DOC_DATE_DF') }}</p></td>
+                <td><input type="date" class="input" name="doc_date_df" placeholder="Дата письма ДФ"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('REASON_RETURN') }}</p></td>
+                <td><textarea class="input" maxlength="2000" name="reason_return" placeholder="Причина возврата"></textarea><br></td>
+            </tr>
+            <tr></tr>
+<!--        </tbody>-->
+    </table>
+    <input type="submit" class="bt save" value="{{ res_value('SAVE') }}">
+</form>
+{% endblock %}
