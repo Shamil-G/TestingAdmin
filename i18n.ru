@@ -1,14 +1,15 @@
 ABOUT = О программе           
 APP_NAME = Администрирование тестирования, 2021
 ADD_PROGRAM = Добавить программу
-ADD_THEME = Загрузить задание
-ADD_PERSONS = Загрузка тестируемых
+PERSONS_ADD = Загрузка тестируемых
 BUTTON_DELETE = Удалить 
 BUTTON_MODIFY = Изменить
 BUTTON_SAVE = Сохранить
+GOTO_LOAD = Перейти к загрузке
 PROGRAM_MODIFY = Изменить программу
 THEME = Задание
 THEME_NAME = Задание
+THEME_ADD = Загрузить задание
 PROGRAMS = Программы тестирования
 CUSTOMER = Заказчик
 DATE_OP = Дата регистрации

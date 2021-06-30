@@ -12,11 +12,11 @@
             <div><a>{{ res_value('APP_NAME') }}</a></div>
             <div><a></a></div>
             <div class="header-r">
-                   {% if session['language'] == 'ru' %}
-                            <a href="/language/kz">ҚАЗ</a>
-                    {% else %}
-                            <a href="/language/ru">РУС</a>
-                   {% endif %}
+{#                   {% if session['language'] == 'ru' %}#}
+{#                            <a href="/language/kz">ҚАЗ</a>#}
+{#                    {% else %}#}
+{#                            <a href="/language/ru">РУС</a>#}
+{#                   {% endif %}#}
                   {% if g.user.is_anonymous == True %}
                             <a href="/login">{{ res_value('LOGIN') }}</a>
                     {% else %}
@@ -42,12 +42,12 @@
         </nav>
 
         <div class="article_title">
-            {% block main_title %}{% endblock %}
+            {% block main_title %}
+            {% endblock %}
         </div>
         <article class="article">
-                <div>
-                    {% block body %}{% endblock %}
-                </div>
+            {% block body %}
+            {% endblock %}
         </article>
 
         <footer class="footer">

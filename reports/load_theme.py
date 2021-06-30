@@ -6,7 +6,8 @@ import os.path
 
 
 def load_theme(id_task, file_name):
-    now = datetime.datetime.now()
+    s_now = datetime.datetime.now()
+    print("Загрузка стартовала: " + s_now.strftime("%d-%m-%Y %H:%M:%S"))
     file_path = cfg.REPORTS_PATH + '\\' + file_name
 
     if not os.path.isfile(file_path):
@@ -14,9 +15,7 @@ def load_theme(id_task, file_name):
         return file_name
     # Нормируем путь к файлу по слэшам
     path = os.path.normpath(file_path)
-    print("Exist excel file: " + str(os.path.isfile(file_path)))
-
-    print('3. LOAD Theme. Excel loading... ' + path)
+    print("Load Theme with Excel file: " + str(os.path.isfile(file_path)))
 
     wb = load_workbook(path)
     print("Книга загружена: " + path)
@@ -66,7 +65,7 @@ def load_persons(id_task, file_name):
         return file_name
     # Нормируем путь к файлу по слэшам
     path = os.path.normpath(file_path)
-    print("Exist excel file: " + str(os.path.isfile(file_path)))
+    print("Load List Persons with Excel file: " + str(os.path.isfile(file_path)))
 
     wb = load_workbook(path)
     print("Книга загружена: " + path)
@@ -76,11 +75,9 @@ def load_persons(id_task, file_name):
 
     con = get_connection()
     cursor = con.cursor()
-    print('----> Max Rows: ' + str(sheet.max_row))
     for i in range(2, sheet.max_row+1):
         iin = sheet.cell(row=i, column=2).value
         fio = sheet.cell(row=i, column=3).value
-        print('Id task: ' + str(id_task) + ', iin: ' + iin + ', fio: ' + fio)
         cursor.callproc('admin.load_person', [id_task, iin, fio])
     con.commit()
     con.close()

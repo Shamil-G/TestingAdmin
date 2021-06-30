@@ -86,27 +86,46 @@ def view_program_detail(id_task):
     return render_template("program-detail.html", id_task=id_task, name_task=get_name_program(id_task), cursor=themes(id_task))
 
 
-@app.route('/program-detail/<int:id_task>', methods=['POST'])
-def upload_file_theme(id_task):
-    upl_file = request.files['file']
-    if upl_file and upl_file.filename != '':
-        id_theme = load_theme(id_task, upl_file.filename)
-        return redirect(url_for('view_theme', id_task=id_task, id_theme=id_theme))
-    return render_template("program-detail.html", id_task=id_task, name_task=get_name_program(id_task), cursor=themes(id_task))
+@app.route('/program-detail/<int:id_task>/load-file', methods=['GET', 'POST'])
+def upload_file(id_task):
+    if request.method == "POST":
+        upl_file_theme = request.files['file-theme']
+        upl_file_persons = request.files['file-persons']
+        if upl_file_theme.filename:
+            print('+++ Идем на обработку THEME файла: ' + upl_file_theme.filename)
+            return redirect(url_for('upload_file_theme', id_task=id_task, upl_file=upl_file_theme.filename))
+        if upl_file_persons.filename:
+            print('+++ Идем на обработку  PERSONS файл: ' + upl_file_persons.filename)
+            return redirect(url_for('upload_file_persons', id_task=id_task, upl_file=upl_file_persons.filename))
+    return render_template("program-detail.html", id_task=id_task, name_task=get_name_program(id_task),
+                           cursor=themes(id_task), file_theme=upl_file_theme, file_person=upl_file_persons)
 
 
-@app.route('/load-persons/<int:id_task>')
-def upload_person(id_task):
-    return render_template("load_persons.html", id_task=id_task, name_task=get_name_program(id_task))
+# @app.route('/load-theme/<int:id_task>')
+# def upload_theme(id_task):
+#     return render_template("load-theme.html", id_task=id_task, name_task=get_name_program(id_task))
 
 
-@app.route('/load-persons/<int:id_task>', methods=['POST'])
-def upload_file_person(id_task):
-    upl_file = request.files['file']
-    if upl_file and upl_file.filename != '':
-        load_persons(id_task, upl_file.filename)
+@app.route('/load-theme/<int:id_task>/<string:upl_file>', methods=['GET', 'POST'])
+def upload_file_theme(id_task, upl_file):
+    print("+++ upload_file_theme: " + upl_file)
+    if request.method == "POST" and upl_file:
+        load_theme(id_task, upl_file)
         return redirect(url_for('view_program_detail', id_task=id_task))
-    return render_template("load_persons.html", id_task=id_task, name_task=get_name_program(id_task))
+    return render_template("load-theme.html", id_task=id_task, name_task=get_name_program(id_task), upl_file=upl_file)
+
+
+# @app.route('/load-persons/<int:id_task>')
+# def upload_person(id_task):
+#     return render_template("load-persons.html", id_task=id_task, name_task=get_name_program(id_task))
+
+
+@app.route('/load-persons/<int:id_task>/<string:upl_file>', methods=['GET', 'POST'])
+def upload_file_persons(id_task, upl_file):
+    if request.method == "POST" and upl_file:
+        load_persons(id_task, upl_file)
+        return redirect(url_for('view_program_detail', id_task=id_task))
+    return render_template("load-persons.html", id_task=id_task, name_task=get_name_program(id_task), upl_file=upl_file)
 
 
 @app.route('/theme/<int:id_task>/<int:id_theme>', methods=['POST', 'GET'])
@@ -126,7 +145,6 @@ def view_theme(id_task, id_theme):
 def view_theme_delete(id_task, id_theme):
     theme_delete(id_theme)
     return redirect(url_for('view_program_detail', id_task=id_task))
-
 
 
 @app.route('/user/<string:name>/<int:id_user>')
