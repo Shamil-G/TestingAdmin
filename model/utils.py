@@ -26,7 +26,7 @@ def set_language(lang):
     if current_page is not None:
         return redirect(current_page)
     else:
-        return redirect(url_for('view_history'))
+        return redirect(url_for('view_programs'))
 
 
 @app.context_processor

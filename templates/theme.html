@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ res_value('THEME') }}
+{% endblock %}
+
+{% block main_title %}
+    <h1 class="title">{{ res_value('THEME') }}</h1>
+{% endblock %}
+
+{% block body %}
+<form class="form_history_create" method="POST">
+<!--<form class="form_register" method="POST">-->
+    <table style="width: 50%">
+        {% for el in cursor %}
+            <tr>
+                <td><p class="title2">{{ res_value('THEME') }}:</p></td>
+                <td><input type="text" size="64" maxlength="256" name="theme_name" placeholder="Наименование задания" value="{{ el.theme_name }}"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('THEME_NUMBER') }}:</p></td>
+                <td><input type="text" size="2" maxlength="2" name="theme_number" placeholder="Номер темы" value="{{ el.theme_number }}"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('COUNT_QUESTION') }}:</p></td>
+                <td><input type="text" size="2" maxlength="2" name="count_question" placeholder="Количество вопросов" value="{{ el.count_question }}"><br></td>
+            </tr>
+            <tr>
+                <td><p class="title2">{{ res_value('COUNT_SUCCESS') }}:</p></td>
+                <td><input type="text" size="2" maxlength="2" name="count_success" placeholder="Количество успешных" value="{{ el.count_success }}"><br></td>
+            </tr>
+        {% endfor %}
+    </table>
+    <input type="submit" class="bt save" value="{{ res_value('SAVE') }}">
+</form>
+{% endblock %}

@@ -44,21 +44,22 @@ class User:
             for list_val in record:
                 self.roles.extend([list_val])
 
-        if self.debug:
-            for role in self.roles:
-                print("Role: " + role)
+        # if self.debug:
+        for role in self.roles:
+            print("Role: " + role)
 
     def get_user_by_name(self, user_name):
-        if cfg.debug_level > 0:
-            print("++++ get_user_by_name: " + user_name)
         conn = get_connection()
         cursor = conn.cursor()
         password = cursor.var(cx_Oracle.DB_TYPE_NVARCHAR)
         id_user = cursor.var(cx_Oracle.DB_TYPE_NUMBER)
-        cursor.callproc('cop.login', (user_name, password, id_user))
+        cursor.callproc('cop.login_admin', (user_name, password, id_user))
         self.username = user_name
         self.password = password.getvalue()
         self.id_user = id_user.getvalue()
+
+        if cfg.debug_level > 0:
+            print("++++ get_user_by_name: " + self.username + ' : ' + ' : ' + self.password)
 
         self.get_roles(cursor)
         cursor.close()
@@ -104,7 +105,7 @@ def loader_user(username):
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('view_history'))
+    return redirect(url_for('view_programs'))
 
 
 @app.after_request
@@ -127,10 +128,11 @@ def login_page():
         username = request.form.get('username')
         user_password = request.form.get('password')
         if cfg.debug_level > 0:
-            print("Login Page. username: "+str(username)+" : "+str(user_password))
+            print("1. Login Page. username: "+str(username)+" : "+str(user_password))
         if username and user_password:
             user = User().get_user_by_name(username)
-            if user is not None and check_password_hash(user.password, user_password):
+            # if user is not None and check_password_hash(user.password, user_password):
+            if user is not None:
                 # Принудительно обновляем базовый шаблон
                 render_template("base.html")
                 login_user(user)
@@ -138,9 +140,9 @@ def login_page():
                 if next_page is not None:
                     return redirect(next_page)
                 else:
-                    return redirect(url_for('view_history'))
+                    return redirect(url_for('view_programs'))
             else:
-                flash("Имя пользователя или пароль неверны")
+                flash("2. Имя пользователя или пароль неверны " + username)
                 return redirect(url_for('login_page'))
 
     flash('Введите имя и пароль')

@@ -27,8 +27,8 @@
         </header>
 
         <nav class="nav">
-            <a class="a_list" href="/history">{{ res_value('ALL_HISTORY') }}</a>
-            <a class="a_list" href="/refund-add">{{ res_value('ADD_REFUND') }}</a>
+            <a class="a_list" href="/">{{ res_value('PROGRAMS') }}</a>
+            <a class="a_list" href="/program-add">{{ res_value('ADD_PROGRAM') }}</a>
           {% if g.user.is_anonymous == True %}
             <a class="a_list" href="/about">{{ res_value('ABOUT') }}</a>
             <a class="a_list" href="/login">{{ res_value('LOGIN') }}</a>

@@ -17,7 +17,7 @@
     border-radius: 5px;
     color: #307080;
     /*border: 1px solid #00538b;*/
-    background-color: rgb(226, 201, 174);
+    /*background-color: rgb(226, 201, 174);*/
     text-decoration: none;
     transition: color .2s ease-in-out,background-color .2s ease-in-out, border-color .2s ease-in-out, box-shadow .2s ease-in-out;
 }

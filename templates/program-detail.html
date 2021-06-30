@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ res_value('DETAIL_INFO') }}
+{% endblock %}
+
+{% block main_title %}
+    <h1  class="title">{{ name_task }}</h1>
+{% endblock %}
+
+{% block body %}
+<form class="form_register" method="POST" enctype="multipart/form-data">
+     <input class="bt save" type="file" name="file" accept=".xlsx,.xls">
+     <input class="bt save" type="submit" value="{{ res_value('ADD_THEME') }}">
+     <a class="bt save" href="/load-persons/{{ id_task }}" >{{ res_value('ADD_PERSONS') }}</a>
+</form>
+<table class="table_model_status">
+    <thead>
+     <tr>
+         <th><a class="title2">{{ res_value('THEME_NAME') }}:</a></th>
+         <th><a class="title2">{{ res_value('THEME_NUMBER') }}:</a></th>
+         <th><a class="title2">{{ res_value('COUNT_QUESTION') }}</a></th>
+         <th><a class="title2">{{ res_value('COUNT_SUCCESS') }}</a></th>
+         <th></th>
+     </tr>
+    </thead>
+    <tbody>
+    {% for el in cursor %}
+        <tr>
+            <td><a class="title2" href="/theme/{{ id_task }}/{{ el.id_theme }}">{{ el.theme_name }}</a></td>
+            <td><a class="title2">{{ el.theme_number }}</a></td>
+            <td><a class="title2" size="2" maxlength="2" name="count_question">{{ el.count_question }}</a></td>
+            <td><a class="title2" size="2" maxlength="2" name="count_success">{{ el.count_success }}</a></td>
+            <td><a href="/theme/{{ id_task }}/{{ el.id_theme }}/del" class ="bt danger">{{ res_value('BUTTON_DELETE') }}</a></td>>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
