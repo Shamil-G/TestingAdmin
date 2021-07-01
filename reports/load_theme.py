@@ -7,14 +7,19 @@ import os.path
 
 def load_theme(id_task, file_name):
     s_now = datetime.datetime.now()
-    print("Загрузка стартовала: " + s_now.strftime("%d-%m-%Y %H:%M:%S"))
-    file_path = cfg.REPORTS_PATH + '\\' + file_name
+    if cfg.os == 'unix':
+       file_path = cfg.REPORTS_PATH + '/' + file_name
+    else:
+       file_path = cfg.REPORTS_PATH + '\\' + file_name
+
+    # Нормируем путь к файлу по слэшам
+    path = os.path.normpath(file_path)
+
+    print("Загрузка стартовала: " + s_now.strftime("%d-%m-%Y %H:%M:%S") + ' : ' + file_name + ' : ' + file_path)
 
     if not os.path.isfile(file_path):
         print("File not exists: " + str(os.path.isfile(file_path)))
         return file_name
-    # Нормируем путь к файлу по слэшам
-    path = os.path.normpath(file_path)
     print("Load Theme with Excel file: " + str(os.path.isfile(file_path)))
 
     wb = load_workbook(path)
@@ -43,8 +48,9 @@ def load_theme(id_task, file_name):
             order_num = 1
             id_question = cursor.callfunc("admin.add_question", str, [id_theme, id_quest, quest])
 
-        cmd = "insert into answers q (id_answer, id_question, order_num_answer, correctly, active, answer) " \
-              "values ( seq_answer.nextval, " + str(id_question) + ", " + str(order_num) + ", '" + correctly + "', 'Y', '" + str(answer) + "')"
+        cmd = "insert into answers q (id_answer, id_question, order_num_answer, correctly, answer) " \
+              "values ( seq_answer.nextval, " + str(id_question) + ", " + str(order_num) + ", '" + correctly + "', '" + str(answer) + "')"
+        print('+++ CMD: ' + cmd)
         cursor.execute(cmd)
         id_prev_quest = id_curr_quest
 

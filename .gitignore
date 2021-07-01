@@ -2,3 +2,4 @@
 venv/
 reports/spool/
 *__pycache__/
+*.pyc
