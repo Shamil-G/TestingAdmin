@@ -63,14 +63,20 @@ def load_theme(id_task, file_name):
 
 def load_persons(id_task, file_name):
     s_now = datetime.datetime.now()
-    print("Загрузка стартовала: " + s_now.strftime("%d-%m-%Y %H:%M:%S"))
-    file_path = cfg.REPORTS_PATH + '\\' + file_name
 
+    if cfg.os == 'unix':
+       file_path = cfg.REPORTS_PATH + '/' + file_name
+    else:
+       file_path = cfg.REPORTS_PATH + '\\' + file_name
+
+    # Нормируем путь к файлу по слэшам
+    path = os.path.normpath(file_path)
+
+    print("Загрузка стартовала: " + s_now.strftime("%d-%m-%Y %H:%M:%S") + ' : ' + file_name + ' : ' + file_path)
     if not os.path.isfile(file_path):
         print("File not exists: " + str(os.path.isfile(file_path)))
         return file_name
-    # Нормируем путь к файлу по слэшам
-    path = os.path.normpath(file_path)
+
     print("Load List Persons with Excel file: " + str(os.path.isfile(file_path)))
 
     wb = load_workbook(path)

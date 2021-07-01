@@ -97,7 +97,7 @@ def upload_file(id_task):
             return redirect(url_for('upload_file_theme', id_task=id_task, upl_file=upl_file_theme.filename))
         if upl_file_persons.filename:
             print('+++ Идем на обработку  PERSONS файл: ' + upl_file_persons.filename)
-            upl_file_person.save(upl_file_person.filename)
+            upl_file_persons.save(cfg.REPORTS_PATH + '/' + upl_file_persons.filename)
             return redirect(url_for('upload_file_persons', id_task=id_task, upl_file=upl_file_persons.filename))
     return render_template("program-detail.html", id_task=id_task, name_task=get_name_program(id_task),
                            cursor=themes(id_task), file_theme=upl_file_theme, file_person=upl_file_persons)
