@@ -36,8 +36,8 @@ create or replace package body admin is
     id pls_integer;
   begin
     id := seq_quest.nextval;
-    insert into questions q (id_question, id_theme, active, order_num_question, question)
-           values ( id, iid_theme, 'Y', iorder_num, iquestion);
+    insert into questions q (id_question, id_theme, order_num_question, question)
+           values ( id, iid_theme, iorder_num, iquestion);
     return id;
   end;
 
@@ -174,6 +174,7 @@ create or replace package body admin is
       return;
     end if;
     v_id_registration:=seq_registration.nextval;
+    log('ADD TEST. Person id_person:  '||iid_person||' got id_registration: '||v_id_registration);
 --  Подготовим таблицу учета прохождения тем     
     for cur in ( select bt.* 
                  from bundle_themes bt
@@ -191,8 +192,7 @@ create or replace package body admin is
         select q.id_question
         bulk collect into input_array_questions
         from questions q
-        where q.id_theme=cur.id_theme
-        and   q.active='Y';
+        where q.id_theme=cur.id_theme;
         
         random_size:=input_array_questions.count;
         if random_size=0 THEN 
@@ -210,6 +210,7 @@ create or replace package body admin is
           select dbms_random.value(1,random_size-order_number) into random_number from dual;
           if input_array_questions.exists(random_number)
           then
+            log('Remain questions: '||input_array_questions.count);
              v_id_question:=input_array_questions(random_number);
              input_array_questions.delete(random_number);
              order_number:=order_number+1;
@@ -231,8 +232,7 @@ create or replace package body admin is
         select a.id_answer
         bulk collect into input_array_answers
         from answers a
-        where a.id_question=cur.id_question
-        and   a.active='Y';
+        where a.id_question=cur.id_question;
         
         random_size:=input_array_answers.count;
         if random_size=0 THEN return; end if;
