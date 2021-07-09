@@ -1,7 +1,7 @@
 from main_app import app
 from view.i18n import I18N
 from db_oracle.connect import get_connection
-from flask import send_from_directory, session, redirect, url_for, request
+from flask import send_from_directory, send_file, session, redirect, url_for, request
 import config as cfg
 
 i18n = I18N()
@@ -9,9 +9,10 @@ i18n = I18N()
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    if cfg.debug_level > 0:
-        print("file for upload: "+cfg.REPORTS_PATH + filename)
-    return send_from_directory(cfg.REPORTS_PATH, filename)
+    if cfg.debug_level > 1:
+        print("uploaded_file: " + cfg.REPORTS_PATH + filename + ' : ' + request.path[1:])
+    return send_file(cfg.REPORTS_PATH + '/' + filename)
+
 
 
 @app.route('/language/<string:lang>')

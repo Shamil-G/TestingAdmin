@@ -32,21 +32,20 @@ class User:
         return message.getvalue()
 
     def get_roles(self, cursor):
-        if cfg.debug_level > 0:
-            print("--++ User. Get roles for: " + self.username)
+        if cfg.debug_level > 1:
+            print("---- User. Get roles for: " + self.username)
         cursor.execute("select r.name from roles r, users u, users_roles us " +
                        "where u.id_user=us.id_user " +
                        "and   r.id_role=us.id_role " +
                        "and u.id_user=:uid_user", uid_user=self.id_user)
-
         self.roles.clear()
         for record in cursor:
             for list_val in record:
                 self.roles.extend([list_val])
-
-        # if self.debug:
-        for role in self.roles:
-            print("Role: " + role)
+        if cfg.debug_level > 1:
+            cnt = 1
+            for role in self.roles:
+                print("---- " + str(cnt) + ". Role: " + role)
 
     def get_user_by_name(self, user_name):
         conn = get_connection()
@@ -58,7 +57,7 @@ class User:
         self.password = password.getvalue()
         self.id_user = id_user.getvalue()
 
-        if cfg.debug_level > 0:
+        if cfg.debug_level > 3:
             print("++++ get_user_by_name: " + self.username + ' : ' + ' : ' + self.password)
 
         self.get_roles(cursor)
@@ -130,6 +129,7 @@ def login_page():
         if cfg.debug_level > 0:
             print("1. Login Page. username: "+str(username)+" : "+str(user_password))
         if username and user_password:
+            user = User().get_user_by_name(username)
             user = User().get_user_by_name(username)
             # if user is not None and check_password_hash(user.password, user_password):
             if user is not None:

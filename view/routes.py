@@ -3,12 +3,12 @@ from flask import render_template, request, redirect, g, flash
 from flask_login import login_required
 from reports.load_theme import load_theme, load_persons
 from model.dml_models import *
-from reports.rep_refund_031knp import rep_refund_031knp
+from reports.print_personal_report import *
+from reports.print_date_report import *
 import cx_Oracle
 import config as cfg
 from model.utils import *
 #  Не удалять - неправильно красит среда!!!
-
 
 if cfg.debug_level > 0:
     print("Routes стартовал...")
@@ -154,11 +154,23 @@ def user_page(name, id_user):
     return "User: " + name + " : " + str(id_user)
 
 
-@app.route('/programs/report_031')
-def view_report_0701():
-    if cfg.debug_level > 2:
-        print("Выдаем отчет отчет по 031 КНП ")
-    new_path = rep_refund_031knp()
-    if cfg.debug_level > 1:
-        print("2. Успешное передача отчета: "+new_path)
-    return redirect(url_for('uploaded_file', filename=new_path))
+@app.route('/results', methods=['POST', 'GET'])
+def view_results():
+    file_name = ''
+    if request.method == "POST":
+        id_reg = request.form['id_reg']
+        if id_reg:
+            print('Получен ID_REG: ' + id_reg)
+            file_name = print_result_test(id_reg)
+            app.logger.debug('++++ DEBUG. We are in RESULTS ...')
+        else:
+            iin = request.form['iin']
+            if iin:
+                file_name = print_result_test_by_iin(iin)
+            else:
+                dat = request.form['dat']
+                if dat:
+                    file_name = print_date_report(dat)
+        if file_name:
+            return redirect(url_for('uploaded_file', filename=file_name))
+    return render_template("results.html")

@@ -220,7 +220,7 @@ create or replace package body admin is
                          order_num_question, id_question, 
                          id_answer, time_reply)
              values( seq_question_testing.nextval, 
-                     v_id_registration, cur.id_theme, order_number, v_id_question, null, null);
+                     v_id_registration, cur.id_theme, order_number, v_id_question, 0, null);
           end if;
         end loop;
     end loop;
@@ -253,11 +253,10 @@ create or replace package body admin is
 
              insert into answers_in_testing( id_question_for_testing, 
                          id_answer, 
-                         order_num_answer,
-                         selected)
+                         order_num_answer)
              values( cur.id_question_for_testing,
                      v_id_answer, 
-                     order_number, '');
+                     order_number);
           end if;
         end loop;
     end loop;
