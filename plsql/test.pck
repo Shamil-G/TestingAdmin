@@ -8,7 +8,9 @@ create or replace package test is
   function get_theme(iid_person in number) return nvarchar2;
   function navigate_question(iid_person in number, icommand in number) return number;
   procedure set_answer(iid_person in number, iorder_num_answer in number);
-  function finish_part(iid_person in number, iforce_finish in number) return nvarchar2;
+
+  procedure finish(iid_person in number);
+  function finish_info(iid_person in number) return nvarchar2;
   function have_test(iid_person in number) return number;
   
   
@@ -129,6 +131,7 @@ create or replace package body test is
   function navigate_question(iid_person in number, icommand in number)
     return number
   is
+   v_status_testing  testing.status_testing%type;
    v_count_question pls_integer;
    v_cur_num_question pls_integer;
    v_remain_time      pls_integer;
@@ -138,14 +141,13 @@ create or replace package body test is
 --    insert into protocol(event_date,message) values(SYSTIMESTAMP, 'ПОлучена команда '|| icommand|| ', id_person: '||iid_person);
 --    commit;
     /*Вытащим общее количество вопросов и оставшееся время для тестировния*/
-     select tft.id_registration, tft.theme_number, tft.count_question, t.current_num_question
-            ,
+     select tft.id_registration, tft.theme_number, tft.count_question, t.current_num_question, t.status_testing,
             ( extract(second from t.beg_time_testing - systimestamp) + 
               extract(minute from t.beg_time_testing - systimestamp)*60 + 
               extract(hour from t.beg_time_testing - systimestamp)*3600 + 
               t.period_for_testing 
             )
-            into v_id_registration, v_theme_number, v_count_question, v_cur_num_question, v_remain_time
+            into v_id_registration, v_theme_number, v_count_question, v_cur_num_question, v_status_testing, v_remain_time
      from themes_for_testing tft, testing t
      where tft.id_registration=t.id_registration
      and   tft.id_theme=t.id_current_theme
@@ -155,7 +157,35 @@ create or replace package body test is
     log('1. navigate_question. id_person: '||iid_person||' : '||icommand||' id_registration: '||v_id_registration||
             ', theme_number: '||v_theme_number||', num_question: '||v_cur_num_question||', time remain: '||v_remain_time);
 
-    /* Идем в начало*/
+    if v_status_testing='Completed' then
+       return 0;
+    end if;
+    /* Идем в начало, к первому неотвеченному вопросу */
+    if icommand=5 then
+        select order_num_question, id_theme
+        into v_cur_num_question, v_theme_number
+        from (
+            select q.order_num_question, tft.id_theme
+            from testing t, themes_for_testing tft, 
+                 questions_for_testing q
+            where t.id_registration=tft.id_registration
+            and   t.id_registration=q.id_registration
+            and   q.id_theme=tft.id_theme
+            and   t.id_person=1
+            and t.status='Active'
+            and coalesce(q.id_answer,0)=0
+            order by theme_number, order_num_question
+        )
+        where rownum=1;
+        
+       update testing t
+       set    t.current_num_question=v_cur_num_question,
+              t.id_current_theme=v_theme_number,
+              t.last_time_access=systimestamp
+       where  t.status='Active'
+       and    t.id_person=iid_person;
+    end if;
+    /* Идем в начало темы, к первому вопросу */
     if icommand=0 then
        update testing t
        set    t.current_num_question=1,
@@ -206,48 +236,58 @@ create or replace package body test is
     return v_remain_time;
   end;
 
-  function finish_part(iid_person in number, iforce_finish in number) return nvarchar2
+  function finish_info(iid_person in number) return nvarchar2
   is
     v_unanswered       pls_integer;
   begin
-    if iforce_finish=0 then
-        select count(q.id_question) 
-        into v_unanswered
-        from testing t, questions_for_testing q
-        where q.id_registration=t.id_registration
-        and   q.id_theme=t.id_current_theme
-        and t.status='Active'
-        and t.id_person=iid_person
-        and coalesce(q.id_answer,0)=0;
-                  
-        if v_unanswered>0 then
-           insert into protocol(event_date,message) 
-                  values(SYSTIMESTAMP, 'Имеются неотвеченные вопросы. id_person: '|| iid_person ||', в количестве: ' ||v_unanswered);
-           commit;
-          if v_unanswered=1 or v_unanswered=21 or v_unanswered=31 or 
-             v_unanswered=41 or v_unanswered=51 or v_unanswered=61  
-             then
-               return 'Имется '||v_unanswered||' неотвеченный вопрос!';
-          end if;
-          if v_unanswered<5 or 
-                  v_unanswered between 22 and 24 or
-                  v_unanswered between 32 and 34 or
-                  v_unanswered between 42 and 44 or
-                  v_unanswered between 52 and 54 or
-                  v_unanswered between 62 and 64
-          then
-                  return 'Имется '||v_unanswered||' неотвеченных вопроса!';
-          end if;
-          return 'Имется '||v_unanswered||' неотвеченных вопросов!';
+      select count(q.id_question) 
+      into v_unanswered
+      from testing t, themes_for_testing tft, 
+           questions_for_testing q
+      where t.id_registration=tft.id_registration
+      and   t.id_registration=q.id_registration
+      and   q.id_theme=tft.id_theme
+      and   t.id_person=iid_person
+      and t.status='Active'
+      and coalesce(q.id_answer,0)=0;
+                        
+      if v_unanswered>0 then
+         insert into protocol(event_date,message) 
+                values(SYSTIMESTAMP, 'Имеются неотвеченные вопросы. id_person: '|| iid_person ||', в количестве: ' ||v_unanswered);
+         commit;
+        if v_unanswered=1 or v_unanswered=21 or v_unanswered=31 or 
+           v_unanswered=41 or v_unanswered=51 or v_unanswered=61  
+           then
+             return 'Имется '||v_unanswered||' неотвеченный вопрос!';
         end if;
+        if v_unanswered<5 or 
+                v_unanswered between 22 and 24 or
+                v_unanswered between 32 and 34 or
+                v_unanswered between 42 and 44 or
+                v_unanswered between 52 and 54 or
+                v_unanswered between 62 and 64
+        then
+                return 'Имется '||v_unanswered||' неотвеченных вопроса!';
+        end if;
+        return 'Имется '||v_unanswered||' неотвеченных вопросов!';
+      end if;
+      return '';
+  end;
+
+  procedure finish(iid_person in number)
+  is
+    rec_testing        testing%rowtype;
+  begin
+    select * into rec_testing from testing t where t.status='Active' and t.id_person=iid_person;
+    
+    if rec_testing.status_testing!='Completed'
+    then
+        update testing t
+        set   t.status_testing='Completed',
+              t.end_time_testing=systimestamp
+        where t.id_registration=rec_testing.id_registration;
+        commit;
     end if;
-    update testing t
-    set   t.status_testing='Completed',
-          t.end_time_testing=systimestamp
-    where t.status='Active'
-    and t.id_person=iid_person;
-    commit;
-    return 'Completed';
   end;
 
 

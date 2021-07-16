@@ -26,7 +26,7 @@ class User:
         con = get_connection()
         cursor = con.cursor()
         message = cursor.var(cx_Oracle.DB_TYPE_NVARCHAR)
-        cursor.callproc('cop.new_user2', [i_username, hash_pwd, message, int(g.user.id_user)])
+        cursor.callproc('cop.new_user2', [i_username, hash_pwd, int(g.user.id_user), message])
         cursor.close()
         con.close()
         return message.getvalue()

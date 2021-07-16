@@ -1,53 +1,73 @@
 create or replace package cop is
 
-  -- Author  : ГУСЕЙНОВ_Ш
-  -- Created : 02.11.2020 16:13:15
-  -- Purpose : 
-  
+  -- Author  : Гусейнов_Ш
+  -- Created : 21.06.2021 14:06:15
+  -- Purpose :
+
   -- Public type declarations
-  procedure user(uname in nvarchar2, upass out nvarchar2, uactive out nchar);
-  procedure new_user(uname in nvarchar2, upass in nvarchar2, imess out nvarchar2);
-  procedure new_user2(uname in nvarchar2, upass in nvarchar2, imess out nvarchar2, iid_creator in number);
-  procedure login(uname in nvarchar2, upass out nvarchar2, uactive out nchar);
-  procedure login(uname in nvarchar2, upass out nvarchar2, iid_user out number);
-  
-  
+  procedure login(uname in nvarchar2, oid_user out number, oremain_time out number);
+  procedure login_admin(uname in nvarchar2, upass out nvarchar2, oid_user out number);
+  procedure new_user2(uname in nvarchar2, upass in nvarchar2, iid_creator in number, imess out nvarchar2);
+
   
 end cop;
 /
 create or replace package body cop is
 
-  procedure user(uname in nvarchar2, upass out nvarchar2, uactive out nchar)
+  procedure login(uname in nvarchar2, oid_user out number, oremain_time out number)
   is
+    r_testing  testing%rowtype;
+    
+--  PRAGMA AUTONOMOUS_TRANSACTION
   begin
-    insert into protocol(event_date, message) values(sysdate, 'get User: '||uname||' : '||upass||' : '||uactive);
+    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'COP.LOGIN for: '||uname);
     commit;
-    select
-         u.password, u.active
-         into
-         upass, uactive
-    from users u where u.name=uname;
-    exception when no_data_found then upass := '';
-  end;
+    select u.id_person into oid_user
+    from persons u where u.iin=uname;
 
-  procedure new_user(uname in nvarchar2, upass in nvarchar2, imess out nvarchar2)
-  is
-  v_id_user number(9);
-  begin
-    select max(id_user) into v_id_user from users;
-    insert into protocol(event_date, message) values(sysdate, 'New User: '||uname||' : '||upass);
-    commit;
-    insert into users(id_user, name, password) values(v_id_user+1, uname, upass);
-    commit;
-    imess:='';
-    exception when dup_val_on_index then
+    begin
+      select * 
+      into r_testing 
+      from testing t 
+      where t.id_person=oid_user and t.status='Active';
+      
+      if r_testing.status_testing='Completed'
+      then
+        oremain_time:=0;
+      else
+        oremain_time := ( extract(second from coalesce(r_testing.beg_time_testing,systimestamp) - systimestamp) + 
+                          extract(minute from coalesce(r_testing.beg_time_testing,systimestamp) - systimestamp)*60 + 
+                          extract(hour from coalesce(r_testing.beg_time_testing,systimestamp) - systimestamp)*3600 + 
+                          r_testing.period_for_testing  );
+        if oremain_time<0 then oremain_time:=0; end if;
+      end if;
+      
+      if r_testing.beg_time_testing is null then
+         update testing t
+         set    t.beg_time_testing=systimestamp,
+                t.status_testing='Идет тестирование'
+         where  t.id_registration=r_testing.id_registration;
+         commit;
+      end if;
+      exception when no_data_found then 
       begin
-        insert into protocol(event_date, message) values(sysdate, 'New User duplicate user name: '||uname);
-        imess:='Такое имя в системе уже существует';
-        commit;
+          insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, '--- Тестируемый отсутствует в тестах: '||uname);
+          commit;
+          oremain_time:=-100;
+      end;
+    end;
+
+    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'COP.LOGIN Success: '||uname||' : '||oid_user);
+    commit;
+    exception when no_data_found then 
+      begin
+          insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, '--- Тестируемый отсутствует в справочнике: '||uname);
+          commit;
+          oremain_time:=-200;
       end;
   end;
 
+--/*
   function is_admin(iid_user in number) return pls_integer
   as
     v_admin pls_integer default 0;
@@ -58,10 +78,10 @@ create or replace package body cop is
     and   ur.id_user=iid_user
     and   r.id_role=ur.id_role
     and   r.name='Admin';
-    return v_admin;    
+    return v_admin;
   end is_admin;
-  
-  procedure new_user2(uname in nvarchar2, upass in nvarchar2, imess out nvarchar2, iid_creator in number)
+
+  procedure new_user2(uname in nvarchar2, upass in nvarchar2, iid_creator in number, imess out nvarchar2)
   is
     v_id_user    number(9);
     v_name_creator nvarchar2(64);
@@ -69,11 +89,11 @@ create or replace package body cop is
     imess:='';
     select u.name into v_name_creator from users u where u.id_user=iid_creator;
     select max(id_user) into v_id_user from users;
-    insert into users(id_user, name, password) values(v_id_user+1, uname, upass);
-    insert into protocol(event_date, message) 
+    insert into users(id_user, name, password, active) values(v_id_user+1, uname, upass, 'Y');
+    insert into protocol(event_date, message)
            values(sysdate, 'New User: '||uname||', created by: '||v_name_creator);
     commit;
-    exception 
+    exception
       when no_data_found then
         begin
           insert into protocol(event_date, message) values(sysdate, 'Not found iid_creator: '||iid_creator);
@@ -82,7 +102,7 @@ create or replace package body cop is
         end;
       when dup_val_on_index then
       begin
-        if is_admin(iid_creator)>0 or 
+        if is_admin(iid_creator)>0 or
            v_name_creator=uname
           then
             update users u
@@ -93,51 +113,31 @@ create or replace package body cop is
             commit;
         else
           insert into protocol(event_date, message) values(sysdate, 'New User duplicate user name: '||uname);
-          imess:='Такое имя в системе уже существует';
+          imess:='Duplicated user name';
           commit;
         end if;
       end;
   end;
 
-  procedure login(uname in nvarchar2, upass out nvarchar2, uactive out nchar)
+  procedure login_admin(uname in nvarchar2, upass out nvarchar2, oid_user out number)
   is
-  v_password nvarchar2(512);
-  v_active   nchar(1);
-  v_id       number(9);
   begin
-    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Login for: '||uname);
+    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Login Admin. Login for: '||uname||', '||upass);
     commit;
-    select
-        u.password, u.active
-         into
-        v_password, v_active
-    from users u where u.name=uname;
-    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Success: '||uname||' : '||v_id ||' : '||v_password||' : '||v_active);
+    select u.id_user, u.password into oid_user, upass
+    from users u 
+    where u.name=uname
+    and  u.active='Y';
+    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Login Admin. Success: '||uname||', id_user: '||oid_user );
     commit;
-    upass:=v_password;
-    uactive:=v_active;
-    exception when no_data_found then upass := '';
+
+    exception when no_data_found then 
+      OID_USER := -100;
+      insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Not Found: '||uname||', id_user: '||oid_user );
+      commit;
   end;
 
-  procedure login(uname in nvarchar2, upass out nvarchar2, iid_user out number)
-  is
-  v_password nvarchar2(512);
-  v_id       number(9);
-  begin
-    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Login for: '||uname);
-    commit;
-    select
-        u.password, u.id_user
-         into
-        v_password, v_id
-    from users u where u.name=uname;
-    insert into protocol(event_date, message) values(CURRENT_TIMESTAMP, 'Success: '||uname||' : '||v_id||' : '||v_password);
-    commit;
-    upass:=v_password;
-    iid_user:=v_id;
-    exception when no_data_found then upass := '';
-  end;
-
+--*/
 begin
   null;
 end cop;
