@@ -90,11 +90,12 @@ def load_persons(id_task, file_name):
     for i in range(2, sheet.max_row+1):
         iin = sheet.cell(row=i, column=2).value
         fio = sheet.cell(row=i, column=3).value
+        depart = sheet.cell(row=i, column=4).value
         if cfg.debug_level > 2:
-            print(str(i) + ". id_task: " + str(id_task) + ", iin: " + str(iin) + ", fio: " + str(fio))
+            print(str(i) + ". id_task: " + str(id_task) + ", iin: " + str(iin) + ", fio: " + str(fio) + ", depart: " + depart)
         if not iin or not fio:
             break
-        cursor.callproc('admin.load_person', [id_task, iin, fio])
+        cursor.callproc('admin.load_person', [id_task, iin, fio, depart])
     con.commit()
     con.close()
     now = datetime.datetime.now()
