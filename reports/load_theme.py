@@ -80,8 +80,8 @@ def load_persons(id_task, file_name):
     print("Load List Persons with Excel file: " + str(os.path.isfile(file_path)))
 
     wb = load_workbook(path)
-    print("Книга загружена: " + path)
     sheet = wb.active
+    print("Книга загружена: " + path + ", строк: " + str(sheet.max_row+1))
 
     print("Подключаем БД")
 
@@ -90,6 +90,10 @@ def load_persons(id_task, file_name):
     for i in range(2, sheet.max_row+1):
         iin = sheet.cell(row=i, column=2).value
         fio = sheet.cell(row=i, column=3).value
+        if cfg.debug_level > 2:
+            print(str(i) + ". id_task: " + str(id_task) + ", iin: " + str(iin) + ", fio: " + str(fio))
+        if not iin or not fio:
+            break
         cursor.callproc('admin.load_person', [id_task, iin, fio])
     con.commit()
     con.close()
