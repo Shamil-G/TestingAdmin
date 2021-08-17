@@ -14,7 +14,6 @@ def uploaded_file(filename):
     return send_file(cfg.REPORTS_PATH + '/' + filename)
 
 
-
 @app.route('/language/<string:lang>')
 def set_language(lang):
     if cfg.debug_level > 0:

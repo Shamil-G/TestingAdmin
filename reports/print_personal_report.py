@@ -117,5 +117,7 @@ def print_result_test(id_registration):
 
 def print_result_test_by_iin(iin):
     id_reg = get_id_reg_by_iin(iin)
+    if cfg.debug_level > 2:
+        print('print_result_test_by_iin: ' + iin)
     return print_result_test(id_reg)
 

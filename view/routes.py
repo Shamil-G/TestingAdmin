@@ -6,6 +6,7 @@ from model.dml_models import *
 from reports.print_personal_report import *
 from reports.print_date_report import *
 import cx_Oracle
+from datetime import datetime
 import config as cfg
 from model.utils import *
 #  Не удалять - неправильно красит среда!!!
@@ -165,12 +166,19 @@ def view_results():
             app.logger.debug('++++ DEBUG. We are in RESULTS ...')
         else:
             iin = request.form['iin']
+            print('view_results by iin: ' + str(iin))
+            iin2 = request.form['iin2']
+            print('view_results by iin: ' + str(iin) + str(iin2))
             if iin:
+                if cfg.debug_level > 2:
+                    print('view_results by iin: ' + str(iin))
                 file_name = print_result_test_by_iin(iin)
             else:
-                dat = request.form['dat']
+                form_dat = request.form['dat']
+                dat = form_dat.split('-')[2] + '.' + form_dat.split('-')[1] + '.' + form_dat.split('-')[0]
+                print('view_results: ' + str(dat))
                 if dat:
-                    file_name = print_date_report(dat)
+                    file_name = print_result_by_date(dat)
         if file_name:
             return redirect(url_for('uploaded_file', filename=file_name))
     return render_template("results.html")

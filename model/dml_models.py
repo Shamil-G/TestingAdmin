@@ -1,5 +1,5 @@
 from db_oracle.connect import get_connection
-from model.models import TaskF, ThemesF, ResultF
+from model.models import TaskF, ThemesF, ResultF, ResultList
 from flask import redirect, url_for, request, g
 import config as cfg
 import cx_Oracle
@@ -243,62 +243,40 @@ def get_id_reg_by_iin(iin):
     return id_reg
 
 
-# def history_search_by_sior_id(sior_id):
-#     if cfg.debug_level > 3:
-#         print('history_search_by_sior_id ...')
-#     con = get_connection()
-#     cursor = con.cursor()
-#     cmd = 'select id_hist, id_user, date_op, sior_id, deleted, gfss_in_nom, doc_date, period, sum_gfss, p_bin, p_name,' \
-#           ' sicid, iin, fio, doc_ret, date_ret, sum_ret, date_ret_gk, sum_ret_gk, doc_num_df, doc_date_df, reason_return ' \
-#           'from HIST_RET_SO_031KNP where sior_id like :id||\'%\' '
-#     if 'Admin' not in g.user.roles:
-#         cmd = cmd + 'and deleted=\'N\' '
-#     cmd = cmd + 'order by 1 desc'
-#     if sior_id == '':
-#         cursor.execute(cmd, [sior_id])
-#     else:
-#         cursor.execute(cmd, [sior_id])
-#     cursor.rowfactory = HistoryRetSO031F
-#     if cfg.debug_level > 3:
-#         print('History list have got by sior_id ...')
-#     return cursor
-#
-#
-# def history_search_by_iin(iin):
-#     if cfg.debug_level > 3:
-#         print('History List ...')
-#     con = get_connection()
-#     cursor = con.cursor()
-#     cmd = 'select id_hist, id_user, date_op, sior_id, deleted, gfss_in_nom, doc_date, period, sum_gfss, p_bin, p_name,' \
-#           ' sicid, iin, fio, doc_ret, date_ret, sum_ret, date_ret_gk, sum_ret_gk, doc_num_df, doc_date_df, reason_return ' \
-#           'from HIST_RET_SO_031KNP where iin like :id||\'%\' '
-#     if 'Admin' not in g.user.roles:
-#         cmd = cmd + 'and deleted=\'N\' '
-#     cmd = cmd + 'order by 1 desc'
-#     if cfg.debug_level > 3:
-#         print('CMD: '+cmd)
-#     cursor.execute(cmd, [iin])
-#     cursor.rowfactory = HistoryRetSO031F
-#     if cfg.debug_level > 3:
-#         print('History list have got by IIN ...')
-#     return cursor
-#
-#
-# def history_search_by_isior_id_in(sior_id, iin):
-#     if cfg.debug_level > 3:
-#         print('History List ...')
-#     con = get_connection()
-#     cursor = con.cursor()
-#     cmd = 'select id_hist, id_user, date_op, sior_id, deleted, gfss_in_nom, doc_date, period, sum_gfss, p_bin, p_name,' \
-#           ' sicid, iin, fio, doc_ret, date_ret, sum_ret, date_ret_gk, sum_ret_gk, doc_num_df, doc_date_df, reason_return ' \
-#           'from HIST_RET_SO_031KNP where sior_id like :id1||\'%\' and iin like :id2||\'%\' '
-#     if 'Admin' not in g.user.roles:
-#         cmd = cmd + 'and deleted=\'N\' '
-#     cmd = cmd + 'order by 1 desc'
-#     if cfg.debug_level > 3:
-#         print('CMD: '+cmd)
-#     cursor.execute(cmd, [sior_id, iin])
-#     cursor.rowfactory = HistoryRetSO031F
-#     if cfg.debug_level > 3:
-#         print('History list have got by IIN ...')
-#     return cursor
+def get_result_by_date(dat):
+    if cfg.debug_level > 2:
+        print('get_result_by_date: ' + str(g.user.id_user) + ' : ' + str(g.user.username) + ', dat: ' + dat)
+    con = get_connection()
+    cursor = con.cursor()
+    cmd = 'select fio, depart, beg_time_testing, end_time_testing, sum(true_score) true_score ' \
+          'from ( ' \
+          'select fio, depart, to_char(beg_time_testing,\'dd.mm.yyyy HH:MM:SS\') as beg_time_testing, ' \
+          'to_char(end_time_testing,\'dd.mm.yyyy hh:mm:ss\') as end_time_testing, ' \
+          'theme_number, ' \
+          'descr as theme_name, ' \
+          'count_question, count_success, sum(true_result) true_score, sum(false_result) false_score ' \
+          'from ( ' \
+          '  select p.fio, p.depart, t.beg_time_testing, t.end_time_testing, ' \
+          '  th.id_theme, theme_number, th.descr, tft.count_question, tft.count_success, ' \
+          '  case when correctly=\'Y\' then 1 else 0 end true_result, ' \
+          '  case when correctly != \'Y\' then 1 else 0 end false_result ' \
+          '  from questions_for_testing qft, ' \
+          '       answers a, ' \
+          '       themes_for_testing tft, themes th, ' \
+          '       persons p, testing t ' \
+          '  where qft.id_registration=tft.id_registration ' \
+          '  and   p.id_person=t.id_person ' \
+          '  and   t.id_registration=tft.id_registration ' \
+          '  and   qft.id_theme=th.id_theme ' \
+          '  and   a.id_answer(+) = qft.id_answer ' \
+          '  and tft.id_theme = th.id_theme ' \
+          '  and trunc(t.beg_time_testing,\'DD\')=:dat ' \
+          ') ' \
+          'group by fio, depart,  beg_time_testing, end_time_testing, ' \
+          'theme_number, count_question, count_success, descr ' \
+          ') ' \
+          'group by fio, depart,  beg_time_testing, end_time_testing ' \
+          'order by fio '
+    cursor.execute(cmd, [dat])
+    cursor.rowfactory = ResultList
+    return cursor

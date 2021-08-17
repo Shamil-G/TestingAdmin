@@ -1,10 +1,10 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column
 
-from main_app import app
+# from main_app import app
 
 
-db = SQLAlchemy(app)
+# db = SQLAlchemy(app)
 print("Модель стартовала...")
 
 
@@ -33,3 +33,12 @@ class ResultF(object):
         self.count_success = count_success
         self.true_score = true_score
         self.false_score = false_score
+
+
+class ResultList(object):
+    def __init__(self, fio, depart, beg_time, end_time, true_score):
+        self.fio = fio
+        self.depart = depart
+        self.beg_time = beg_time
+        self.end_time = end_time
+        self.true_score = true_score

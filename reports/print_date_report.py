@@ -1,4 +1,4 @@
-from model.dml_models import get_result, get_result_info, get_id_reg_by_iin
+from model.dml_models import get_result_by_date
 import config as cfg
 import xlsxwriter
 import datetime
@@ -9,14 +9,14 @@ from flask import redirect
 from datetime import date, timedelta
 
 
-def print_date_report(dat):
-    now = datetime.datetime.now()
-    # today = datetime.date.today()
-
-    file_name = 'result ' + dat + '.xlsx'
+def print_result_by_date(dat):
+    file_name = 'list_result_' + dat + '.xlsx'
     file_path = cfg.REPORTS_PATH + file_name
+    # Для тестирования через __main__ раскомментарить
+    # file_path = file_name
 
-    print('++++ print_date_report: ' + dat + ', file_name: ' + file_name)
+    if cfg.debug_level > 2:
+        print('++++ print_date_report: ' + dat + ', file_name: ' + file_name)
     if os.path.isfile(file_path):
         return file_name
 
@@ -24,80 +24,54 @@ def print_date_report(dat):
     worksheet = workbook.add_worksheet()
     worksheet.set_column(0, 0, 1)
     worksheet.set_column(1, 1, 5)
-    worksheet.set_column(2, 2, 22)
-    worksheet.set_column(3, 3, 16)
-    worksheet.set_column(4, 4, 10)
-    worksheet.set_column(5, 5, 8)
-    worksheet.set_column(6, 6, 10)
-    worksheet.set_column(7, 7, 8)
+    worksheet.set_column(2, 2, 32)
+    worksheet.set_column(3, 3, 32)
+    worksheet.set_column(4, 4, 18)
+    worksheet.set_column(5, 5, 18)
+    worksheet.set_column(6, 6, 12)
 
-    cursor = get_result(id_registration)
+    worksheet.set_row(0, 32)
+    worksheet.set_row(1, 20)
 
-    # print("Провели расчет и формируем Excel: " + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+    cursor = get_result_by_date(dat)
 
     title1_cell_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'size': 18})
-    worksheet.merge_range('B1:H1', "", title1_cell_format)
-    worksheet.set_row(0, 32)
-    worksheet.set_row(1, 24)
-    worksheet.set_row(2, 16)
+    worksheet.merge_range('B1:G1', "", title1_cell_format)
 
     title2_cell_format = workbook.add_format(
-        {'align': 'left', 'bold': True, 'valign': 'vcenter', 'size': 14, 'underline': True})
-    title3_cell_format = workbook.add_format({'align': 'left', 'bold': True, 'valign': 'vcenter', 'size': 12})
-    title3_1_cell_format = workbook.add_format({'align': 'left', 'valign': 'vcenter', 'size': 12})
-    theme_name_format = workbook.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+        {'align': 'left', 'valign': 'vcenter', 'size': 12, 'underline': True})
+    worksheet.merge_range('B2:C2', "", title2_cell_format)
 
-    worksheet.merge_range('B2:H2', "", title2_cell_format)
-    worksheet.merge_range('B5:C5', "", title3_cell_format)
-    worksheet.merge_range('B6:C6', "", title3_cell_format)
-    worksheet.merge_range('C8:D8', "", theme_name_format)
+    header_table_format = workbook.add_format({'align': 'center', 'bold': True, 'valign': 'vcenter', 'border': 1})
+    header_table_format.set_text_wrap()
 
-    common_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
-    common_format.set_text_wrap()
-    common_format_2 = workbook.add_format({'align': 'center', 'bold': True, 'border': 1})
-    common_format_2.set_align('vcenter')
-    common_format_2.set_text_wrap()
-    sum_pay_format = workbook.add_format({'num_format': '#,###,##0.00', 'font_color': 'black', 'align': 'vcenter'})
-    # date_format = workbook.add_format({'num_format':'dd/mm/yy', 'align': 'vcenter'})
+    value_table_format = workbook.add_format({'align': 'center', 'valign': 'vcenter', 'border': 1})
+    value_left_table_format = workbook.add_format({'align': 'left', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+    value_left_table_format.set_text_wrap()
 
     worksheet.write('B1', 'РЕЗУЛЬТАТЫ ТЕСТИРОВАНИЯ', title1_cell_format)
-    worksheet.write('B2', fio, title2_cell_format)
-    worksheet.write('B3', 'Ид:', title3_cell_format)
-    worksheet.write('C3', id_reg, title3_1_cell_format)
-    worksheet.write('B4', 'ИИН:', title3_cell_format)
-    worksheet.write('C4', iin, title3_1_cell_format)
-
-    ft_beg = time_beg.strftime('%d.%m.%Y  %H:%M:%S')
-    ft_end = time_end.strftime('%d.%m.%Y  %H:%M:%S')
-
-    worksheet.write('B5', 'Начало тестирования:', title3_cell_format)
-    worksheet.write('D5', ft_beg, title3_1_cell_format)
-    worksheet.write('B6', 'Окончание тестирования:', title3_cell_format)
-    worksheet.write('D6', ft_end, title3_1_cell_format)
-
-    worksheet.write('B8', '№', common_format_2)
-    worksheet.write('C8', 'Задание', common_format_2)
-    worksheet.write('E8', 'Вопросов', common_format_2)
-    worksheet.write('F8', 'Порог', common_format_2)
-    worksheet.write('G8', 'Верных ответов', common_format_2)
-    worksheet.write('H8', 'Ошибок', common_format_2)
-    row = 0
+    worksheet.write('B2', 'За: ' + dat, title2_cell_format)
+    worksheet.write('B4', '№', header_table_format)
+    worksheet.write('C4', 'ФИО', header_table_format)
+    worksheet.write('D4', 'Департамент/Филиал', header_table_format)
+    worksheet.write('E4', 'Начало тестирования', header_table_format)
+    worksheet.write('F4', 'Конец тестирования', header_table_format)
+    worksheet.write('G4', 'Кол-во правильных ответов', header_table_format)
+    row = 1
     for record in cursor:
-        merge_format = 'C' + str(row + 8 + 1) + ':D' + str(row + 8 + 1) + ''
-
-        worksheet.merge_range(merge_format, "", theme_name_format)
-        worksheet.write(row + 8, 1, record.theme_number, common_format)
-        worksheet.write(row + 8, 2, record.theme_name, theme_name_format)
-        worksheet.write(row + 8, 4, record.count_question, common_format)
-        worksheet.write(row + 8, 5, record.count_success, common_format)
-        worksheet.write(row + 8, 6, record.true_score, common_format)
-        worksheet.write(row + 8, 7, record.false_score, common_format)
+        worksheet.write(row + 3, 1, row, value_table_format)
+        worksheet.write(row + 3, 2, record.fio, value_left_table_format)
+        worksheet.write(row + 3, 3, record.depart, value_left_table_format)
+        worksheet.write(row + 3, 4, record.beg_time, value_table_format)
+        worksheet.write(row + 3, 5, record.end_time, value_table_format)
+        worksheet.write(row + 3, 6, record.true_score, value_table_format)
         row += 1
 
-    worksheet.write(row + 8 + 1, 1, now.strftime("%d.%m.%Y %H:%M:%S"))
+    worksheet.write(row + 3 + 1, 1, datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     workbook.close()
 
-    # print("Завершен расчет: " + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
+    if cfg.print_at_once > 2:
+        print("Завершен расчет: " + datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S"))
     if cfg.print_at_once:
         None
     #        my_printer = win32print.GetDefaultPrinter()
@@ -110,3 +84,9 @@ def print_date_report(dat):
     #            0
     #        )
     return file_name
+
+
+if __name__ == "__main__":
+    now = '16.08.2021'
+    print("Тестируем списочный отчет по результатам тестирования за: " + now)
+    print_result_by_date(now)
