@@ -18,7 +18,8 @@ def print_result_by_date(dat):
     if cfg.debug_level > 2:
         print('++++ print_date_report: ' + dat + ', file_name: ' + file_name)
     if os.path.isfile(file_path):
-        return file_name
+        os.remove(file_path)
+        # return file_name
 
     workbook = xlsxwriter.Workbook(file_path)
     worksheet = workbook.add_worksheet()
