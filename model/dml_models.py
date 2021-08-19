@@ -250,8 +250,8 @@ def get_result_by_date(dat):
     cursor = con.cursor()
     cmd = 'select fio, depart, beg_time_testing, end_time_testing, sum(true_score) true_score ' \
           'from ( ' \
-          'select fio, depart, to_char(beg_time_testing,\'dd.mm.yyyy HH:MM:SS\') as beg_time_testing, ' \
-          'to_char(end_time_testing,\'dd.mm.yyyy hh:mm:ss\') as end_time_testing, ' \
+          'select fio, depart, to_char(beg_time_testing,\'dd.mm.yyyy HH24:MI:SS\') as beg_time_testing, ' \
+          'to_char(end_time_testing,\'dd.mm.yyyy hh24:mi:ss\') as end_time_testing, ' \
           'theme_number, ' \
           'descr as theme_name, ' \
           'count_question, count_success, sum(true_result) true_score, sum(false_result) false_score ' \
