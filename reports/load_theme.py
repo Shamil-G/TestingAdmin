@@ -43,6 +43,8 @@ def load_theme(id_task, file_name):
         correctly = sheet.cell(row=i, column=4).value
         answer = sheet.cell(row=i, column=5).value
         order_num = order_num + 1
+        if not quest:
+            break
         if id_curr_quest != id_prev_quest:
             id_quest = id_quest + 1
             order_num = 1
