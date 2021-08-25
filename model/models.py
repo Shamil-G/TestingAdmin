@@ -26,11 +26,13 @@ class ThemesF:
 
 
 class ResultF(object):
-    def __init__(self, theme_number, theme_name, count_question, count_success, true_score, false_score):
+    def __init__(self, theme_number, theme_name, count_question,
+                 # count_success,
+                 true_score, false_score):
         self.theme_number = theme_number
         self.theme_name = theme_name
         self.count_question = count_question
-        self.count_success = count_success
+        # self.count_success = count_success
         self.true_score = true_score
         self.false_score = false_score
 

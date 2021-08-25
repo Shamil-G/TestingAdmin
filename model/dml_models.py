@@ -204,21 +204,55 @@ def get_result(id_registration):
         print('Get answer for: ' + str(g.user.id_user) + ' : ' + str(g.user.username))
     con = get_connection()
     cursor = con.cursor()
-    cmd = 'select theme_number, descr as theme_name, count_question, count_success, ' \
-          'sum(true_result) true_score, sum(false_result) false_score ' \
-          'from ( ' \
-          'select th.id_theme, theme_number, th.descr, tft.count_question, tft.count_success, ' \
-          'case when correctly=\'Y\' then 1 else 0 end true_result, ' \
-          'case when correctly != \'Y\' then 1 else 0 end false_result ' \
-          'from questions_for_testing qft, answers a, ' \
-          'themes_for_testing tft, themes th ' \
-          'where qft.id_registration=tft.id_registration ' \
-          'and qft.id_theme=th.id_theme ' \
-          'and a.id_answer(+) = qft.id_answer ' \
-          'and tft.id_registration = :id ' \
-          'and tft.id_theme = th.id_theme ' \
-          ') ' \
-          'group by theme_number, count_question, count_success, descr'
+    # cmd = 'select theme_number, descr as theme_name, count_question, count_success, ' \
+    #       'sum(true_result) true_score, sum(false_result) false_score ' \
+    #       'from ( ' \
+    #       'select th.id_theme, theme_number, th.descr, tft.count_question, tft.count_success, ' \
+    #       'case when correctly=\'Y\' then 1 else 0 end true_result, ' \
+    #       'case when correctly != \'Y\' then 1 else 0 end false_result ' \
+    #       'from questions_for_testing qft, answers a, ' \
+    #       'themes_for_testing tft, themes th ' \
+    #       'where qft.id_registration=tft.id_registration ' \
+    #       'and qft.id_theme=th.id_theme ' \
+    #       'and a.id_answer(+) = qft.id_answer ' \
+    #       'and tft.id_registration = :id ' \
+    #       'and tft.id_theme = th.id_theme ' \
+    #       ') ' \
+    #       'group by theme_number, count_question, count_success, descr'
+    cmd = 'select * from ( ' \
+          '  select theme_number, theme_name, count_question, true_score, false_score ' \
+          '  from ( ' \
+          '    select theme_number, theme_name, count_question, ' \
+          '           sum(true_result) true_score, sum(false_result) false_score ' \
+          '    from ( ' \
+          '       select theme_number, to_char(th.descr) theme_name, tft.count_question, tft.count_success, ' \
+          '              case when correctly=\'Y\' then 1 else 0 end true_result, ' \
+          '              case when correctly != \'Y\' then 1 else 0 end false_result ' \
+          '       from questions_for_testing qft, answers a, themes_for_testing tft, themes th ' \
+          '       where qft.id_registration=tft.id_registration ' \
+          '       and qft.id_theme=th.id_theme ' \
+          '       and a.id_answer(+) = qft.id_answer ' \
+          '       and tft.id_registration = :id ' \
+          '       and tft.id_theme = th.id_theme ' \
+          '    ) ' \
+          '    group by theme_number, count_question, count_success, theme_name ' \
+          '  ) ' \
+          '  union ' \
+          '  select theme_number, theme_name, count(id_question_for_testing) count_question, ' \
+          '         sum(true_result) true_score, sum(false_result) false_score ' \
+          '  from ( ' \
+          '      select 100 theme_number, \'Итого: \' as  theme_name, qft.id_question_for_testing, tft.count_success, ' \
+          '             case when correctly=\'Y\' then 1 else 0 end true_result, ' \
+          '             case when correctly != \'Y\' then 1 else 0 end false_result ' \
+          '      from questions_for_testing qft, answers a, themes_for_testing tft, themes th ' \
+          '      where qft.id_registration=tft.id_registration ' \
+          '      and qft.id_theme=th.id_theme ' \
+          '      and a.id_answer(+) = qft.id_answer ' \
+          '      and tft.id_registration = :id ' \
+          '      and tft.id_theme = th.id_theme ' \
+          '   ) ' \
+          '   group by(theme_number, theme_name) ' \
+          ' ) order by 1'
     cursor.execute(cmd, [id_registration])
     cursor.rowfactory = ResultF
     return cursor

@@ -8,6 +8,7 @@ from flask import redirect
 #import win32print
 from datetime import date, timedelta
 
+module_result_path = ''
 
 def print_result_test(id_registration):
     print('++++ print_result_test: ' + str(id_registration))
@@ -19,7 +20,10 @@ def print_result_test(id_registration):
         return ''
 
     file_name = 'result ' + str(id_reg) + '.xlsx'
-    file_path = cfg.REPORTS_PATH + file_name
+    if not module_result_path:
+        file_path = cfg.REPORTS_PATH + file_name
+    else:
+        file_path = module_result_path + file_name
 
     if os.path.isfile(file_path):
         return file_name
@@ -81,20 +85,27 @@ def print_result_test(id_registration):
     worksheet.write('B8', '№', common_format_2)
     worksheet.write('C8', 'Задание', common_format_2)
     worksheet.write('E8', 'Вопросов', common_format_2)
-    worksheet.write('F8', 'Порог', common_format_2)
-    worksheet.write('G8', 'Верных ответов', common_format_2)
-    worksheet.write('H8', 'Ошибок', common_format_2)
+    # worksheet.write('F8', 'Порог', common_format_2)
+    # worksheet.write('G8', 'Верных ответов', common_format_2)
+    # worksheet.write('H8', 'Ошибок', common_format_2)
+    worksheet.write('F8', 'Верных ответов', common_format_2)
+    worksheet.write('G8', 'Ошибок', common_format_2)
     row = 0
     for record in cursor:
         merge_format = 'C'+str(row+8+1)+':D'+str(row+8+1) + ''
 
         worksheet.merge_range(merge_format, "", theme_name_format)
-        worksheet.write(row + 8, 1, record.theme_number, common_format)
+        if record.theme_number != 100:
+            worksheet.write(row + 8, 1, record.theme_number, common_format)
+        else:
+            worksheet.write(row + 8, 1, None, common_format)
         worksheet.write(row + 8, 2, record.theme_name, theme_name_format)
         worksheet.write(row + 8, 4, record.count_question, common_format)
-        worksheet.write(row + 8, 5, record.count_success, common_format)
-        worksheet.write(row + 8, 6, record.true_score, common_format)
-        worksheet.write(row + 8, 7, record.false_score, common_format)
+        # worksheet.write(row + 8, 5, record.count_success, common_format)
+        # worksheet.write(row + 8, 6, record.true_score, common_format)
+        # worksheet.write(row + 8, 7, record.false_score, common_format)
+        worksheet.write(row + 8, 5, record.true_score, common_format)
+        worksheet.write(row + 8, 6, record.false_score, common_format)
         row += 1
 
     worksheet.write(row + 8 + 1, 1, now.strftime("%d.%m.%Y %H:%M:%S"))
@@ -121,3 +132,9 @@ def print_result_test_by_iin(iin):
         print('print_result_test_by_iin: ' + iin)
     return print_result_test(id_reg)
 
+
+if __name__ == "__main__":
+    module_result_path = './'
+    my_iin = '902581278664'
+    print('Testing app Print Result for: ' + my_iin)
+    print_result_test_by_iin(my_iin)

@@ -5,7 +5,8 @@ create or replace package test is
   -- Purpose : Процедура тестирования
   
   -- Public type declarations
-  function get_theme(iid_person in number) return nvarchar2;
+  procedure get_theme(iid_person in number, otheme_name out nvarchar2, ostatus_testing out nvarchar2);
+  
   function navigate_question(iid_person in number, icommand in number) return number;
   procedure set_answer(iid_person in number, iorder_num_answer in number);
 
@@ -36,20 +37,19 @@ create or replace package body test is
     insert into protocol(event_date, message) values(systimestamp, imess);
     commit;
   end;
-  
-  function get_theme(iid_person in number) return nvarchar2
+
+  procedure get_theme(iid_person in number, otheme_name out nvarchar2, ostatus_testing out nvarchar2)
   is
-  omess nvarchar2(128);
   begin
-    select th.descr
-    into omess
-    from themes th, 
+    select tft.theme_number || '. '|| th.descr, t.status_testing
+    into otheme_name, ostatus_testing
+    from themes th, themes_for_testing tft, 
          testing t
     where th.id_theme=t.id_current_theme
+    and t.id_registration=tft.id_registration
+    and t.id_current_theme=tft.id_theme
     and t.status='Active'
     and t.id_person=iid_person;
-    
-    return omess;
   end;
   
   procedure set_answer(iid_person in number, iorder_num_answer in number)
@@ -88,12 +88,11 @@ create or replace package body test is
       raise_application_error(-20000, sqlerrm);
   end;
   
-  function next_theme(iid_person in number, icommand in number, iid_registration in pls_integer, itheme_number in pls_integer) return pls_integer
+  function next_theme(icommand in number, iid_registration in pls_integer, itheme_number in pls_integer) return pls_integer
   is
     row_tft         themes_for_testing%rowtype;
   begin
-    log('NEXT_THEME. id_person: '||iid_person||' : '||icommand);  
-    if icommand=1 and itheme_number>1 then
+    if icommand=2 and itheme_number>1 then
       begin
         select tft.* into row_tft
         from themes_for_testing tft 
@@ -108,7 +107,7 @@ create or replace package body test is
         exception when no_data_found then return -50;
       end;
     end if;
-    if icommand=3 then
+    if icommand=12 then
       begin
         select tft.* into row_tft
         from themes_for_testing tft 
@@ -128,6 +127,16 @@ create or replace package body test is
     return 0;
   end;
   
+  procedure navigate_finish(iid_registration in pls_integer)
+  is
+  begin
+       update testing t
+       set    t.last_time_access=systimestamp,
+              t.status_testing='Проверка завершена'
+       where  t.id_registration=iid_registration;
+       commit;
+  end;
+  
   function navigate_question(iid_person in number, icommand in number)
     return number
   is
@@ -137,9 +146,11 @@ create or replace package body test is
    v_remain_time      pls_integer;
    v_id_registration  pls_integer;
    v_theme_number     pls_integer;
+   v_id_theme         pls_integer;
   begin
 --    insert into protocol(event_date,message) values(SYSTIMESTAMP, 'ПОлучена команда '|| icommand|| ', id_person: '||iid_person);
 --    commit;
+    begin
     /*Вытащим общее количество вопросов и оставшееся время для тестировния*/
      select tft.id_registration, tft.theme_number, tft.count_question, t.current_num_question, t.status_testing,
             ( extract(second from t.beg_time_testing - systimestamp) + 
@@ -153,7 +164,10 @@ create or replace package body test is
      and   tft.id_theme=t.id_current_theme
      and   t.status='Active'       
      and   t.id_person=iid_person;
-
+    exception when no_data_found then
+      log('Navigate_question. Error! Absend DATA for testing!');
+      return 0;
+    end;
     log('1. navigate_question. id_person: '||iid_person||' : '||icommand||' id_registration: '||v_id_registration||
             ', theme_number: '||v_theme_number||', num_question: '||v_cur_num_question||', time remain: '||v_remain_time);
 
@@ -161,8 +175,9 @@ create or replace package body test is
        return 0;
     end if;
     /* Идем в начало, к первому неотвеченному вопросу */
-    if icommand=5 then
+    if icommand=5 or v_status_testing='Проверка' then
        begin
+--          log('Commmand=5. Вход');
           select order_num_question, id_theme
           into v_cur_num_question, v_theme_number
           from (
@@ -178,50 +193,109 @@ create or replace package body test is
               order by theme_number, order_num_question
           )
           where rownum=1;
+
+--          log('Commmand=5. Результат. v_cur_num_question: '||v_cur_num_question||', id_theme: '||v_theme_number||', v_id_registration: '||v_id_registration);
+          if v_status_testing!='Проверка'
+          then
+              update testing t 
+              set t.status_testing='Проверка'
+              where t.id_registration=v_id_registration;
+          end if;
+          
        exception when no_data_found then
-          select order_num_question, id_theme
-          into v_cur_num_question, v_theme_number
-          from (
-              select q.order_num_question, tft.id_theme
-              from testing t, themes_for_testing tft, 
-                   questions_for_testing q
-              where t.id_registration=tft.id_registration
-              and   t.id_registration=q.id_registration
-              and   q.id_theme=tft.id_theme
-              and   t.id_person=1
-              and t.status='Active'
-              order by theme_number, order_num_question
-          )
-          where rownum=1;
+          if v_status_testing='Проверка' 
+          then
+--              log('Commmand=5. Exception Finish.'|| v_id_registration);
+              navigate_finish(v_id_registration);
+              return -100; --Скажем WEB-ке что пора закругляться
+          else
+              select order_num_question, id_theme
+              into v_cur_num_question, v_theme_number
+              from (
+                  select q.order_num_question, tft.id_theme
+                  from testing t, themes_for_testing tft, 
+                       questions_for_testing q
+                  where t.id_registration=tft.id_registration
+                  and   t.id_registration=q.id_registration
+                  and   q.id_theme=tft.id_theme
+                  and   t.id_person=iid_person
+                  and t.status='Active'
+                  order by theme_number, order_num_question
+              )
+              where rownum=1;
+          end if;
+
+--          log('Commmand=5. Exception Select. v_cur_num_question: '||v_cur_num_question||', id_theme: '||v_theme_number||', v_id_registration: '||v_id_registration);
+          update testing t 
+          set t.status_testing='Полная проверка'
+          where t.id_registration=v_id_registration;
        end;
         
+--       log('Commmand=5. Update. v_cur_num_question: '||v_cur_num_question||', id_theme: '||v_theme_number||', v_id_registration: '||v_id_registration);
        update testing t
        set    t.current_num_question=v_cur_num_question,
               t.id_current_theme=v_theme_number,
               t.last_time_access=systimestamp
-       where  t.status='Active'
-       and    t.id_person=iid_person;
+       where  t.id_registration=v_id_registration;
+       commit;
+       return v_remain_time;
     end if;
-    /* Идем в начало темы, к первому вопросу */
+    /* Идем в начало тестирования, к первому вопросу */
     if icommand=0 then
+       select id_theme 
+       into v_id_theme
+       from (
+           select tft.id_theme
+           from themes_for_testing tft
+           where tft.id_registration=v_id_registration
+           order by tft.theme_number
+       )
+       where rownum=1;
+       
+       update testing t
+       set    t.current_num_question=1,
+              t.id_current_theme=v_id_theme,
+              t.last_time_access=systimestamp
+       where  t.id_registration=v_id_registration;
+    end if;
+    /* Идем в начало раздела, к первому вопросу */
+    if icommand=1 then
        update testing t
        set    t.current_num_question=1,
               t.last_time_access=systimestamp
-       where  t.status='Active'
-       and    t.id_person=iid_person;
+       where  t.id_registration=v_id_registration;
     end if;
-    /* Идем в конец*/
-    if icommand=4 then
+    /* Идем в конец раздела*/
+    if icommand=11 then
        update testing t
        set    t.current_num_question=v_count_question,
               t.last_time_access=systimestamp
-       where  t.status='Active'
-       and    t.id_person=iid_person;
+       where  t.id_registration=v_id_registration;
     end if;
     /* */
-    if icommand=3 then
+    /* Идем в начало тестирования, к первому вопросу */
+    if icommand=10 then
+       select id_theme 
+       into v_id_theme
+       from (
+           select tft.id_theme
+           from themes_for_testing tft
+           where tft.id_registration=v_id_registration
+           order by tft.theme_number desc
+       )
+       where rownum=1;
+       
+       update testing t
+       set    t.current_num_question=v_count_question,
+              t.id_current_theme=v_id_theme,
+              t.last_time_access=systimestamp
+       where  t.id_registration=v_id_registration;
+    end if;
+    /* Следующий вопрос */
+    if icommand=12 then
+      
        if v_cur_num_question=v_count_question then
-          if next_theme(iid_person, icommand, v_id_registration, v_theme_number)=-100 then
+          if next_theme(icommand, v_id_registration, v_theme_number)=-100 then
               log('2. ABSENT NEXT THEME. navigate_question. id_person: '||iid_person||' : '||icommand||' id_registration: '||v_id_registration||
                       ', theme_number: '||v_theme_number||', num_question: '||v_cur_num_question||', time remain: '||v_remain_time);
             return -100;
@@ -230,22 +304,20 @@ create or replace package body test is
           update testing t
           set    t.current_num_question=current_num_question+1,
                 t.last_time_access=systimestamp
-          where  t.status='Active'
-          and    t.id_person=iid_person;
+          where  t.id_registration=v_id_registration;
        end if;
     end if;
-
-    if icommand=1 then
+    /* Предыдущий вопрос */
+    if icommand=2 then
        if v_cur_num_question=1 then
-         if next_theme(iid_person, icommand, v_id_registration, v_theme_number)=-50 then
+         if next_theme(icommand, v_id_registration, v_theme_number)=-50 then
            return -50;
          end if;
        else
-         update testing t
-         set    t.current_num_question=current_num_question-1,
-                t.last_time_access=systimestamp
-         where  t.status='Active'
-         and    t.id_person=iid_person;
+          update testing t
+          set    t.current_num_question=current_num_question-1,
+                 t.last_time_access=systimestamp
+          where  t.id_registration=v_id_registration;
        end if;
     end if;
 
@@ -272,21 +344,7 @@ create or replace package body test is
          insert into protocol(event_date,message) 
                 values(SYSTIMESTAMP, 'Имеются неотвеченные вопросы. id_person: '|| iid_person ||', в количестве: ' ||v_unanswered);
          commit;
-        if v_unanswered=1 or v_unanswered=21 or v_unanswered=31 or 
-           v_unanswered=41 or v_unanswered=51 or v_unanswered=61  
-           then
-             return 'Имется '||v_unanswered||' неотвеченный вопрос!';
-        end if;
-        if v_unanswered<5 or 
-                v_unanswered between 22 and 24 or
-                v_unanswered between 32 and 34 or
-                v_unanswered between 42 and 44 or
-                v_unanswered between 52 and 54 or
-                v_unanswered between 62 and 64
-        then
-                return 'Имется '||v_unanswered||' неотвеченных вопроса!';
-        end if;
-        return 'Имется '||v_unanswered||' неотвеченных вопросов!';
+         return to_char(v_unanswered);
       end if;
       return '';
   end;

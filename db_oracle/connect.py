@@ -28,6 +28,7 @@ _pool = cx_Oracle.SessionPool(cfg.username, cfg.password, cfg.dsn,
                               threaded=True, sessionCallback=init_session)
 print("Пул соединенй БД Oracle создан...")
 
+
 def get_connection():
     if cfg.Debug > 0:
         print("Получаем курсор!")
