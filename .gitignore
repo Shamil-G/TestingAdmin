@@ -4,3 +4,4 @@ venv/
 reports/spool/
 *__pycache__/
 *.pyc
+i18n*.*
