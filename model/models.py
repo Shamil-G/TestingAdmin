@@ -37,6 +37,16 @@ class ResultF(object):
         self.false_score = false_score
 
 
+class ResultFullF(object):
+    def __init__(self, theme_name, id_question, order_num_question, question, correctly, answer):
+        self.theme_name = theme_name
+        self.id_question = id_question
+        self.order_num_question = order_num_question
+        self.question = question
+        self.correctly = correctly
+        self.answer = answer
+
+
 class ResultList(object):
     def __init__(self, fio, depart, beg_time, end_time, true_score):
         self.fio = fio
