@@ -3,6 +3,7 @@ from flask import render_template, request, redirect, g, flash
 from flask_login import login_required
 from reports.load_theme import load_theme, load_persons
 from model.dml_models import *
+from reports.print_personal_report import *
 from reports.print_full_personal_report import *
 from reports.print_date_report import *
 import cx_Oracle
