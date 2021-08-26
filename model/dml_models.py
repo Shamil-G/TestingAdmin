@@ -1,5 +1,5 @@
 from db_oracle.connect import get_connection
-from model.models import TaskF, ThemesF, ResultF, ResultList
+from model.models import TaskF, ThemesF, ResultF, ResultFullF, ResultList
 from flask import redirect, url_for, request, g
 import config as cfg
 import cx_Oracle
@@ -204,21 +204,6 @@ def get_result(id_registration):
         print('Get answer for: ' + str(g.user.id_user) + ' : ' + str(g.user.username))
     con = get_connection()
     cursor = con.cursor()
-    # cmd = 'select theme_number, descr as theme_name, count_question, count_success, ' \
-    #       'sum(true_result) true_score, sum(false_result) false_score ' \
-    #       'from ( ' \
-    #       'select th.id_theme, theme_number, th.descr, tft.count_question, tft.count_success, ' \
-    #       'case when correctly=\'Y\' then 1 else 0 end true_result, ' \
-    #       'case when correctly != \'Y\' then 1 else 0 end false_result ' \
-    #       'from questions_for_testing qft, answers a, ' \
-    #       'themes_for_testing tft, themes th ' \
-    #       'where qft.id_registration=tft.id_registration ' \
-    #       'and qft.id_theme=th.id_theme ' \
-    #       'and a.id_answer(+) = qft.id_answer ' \
-    #       'and tft.id_registration = :id ' \
-    #       'and tft.id_theme = th.id_theme ' \
-    #       ') ' \
-    #       'group by theme_number, count_question, count_success, descr'
     cmd = 'select * from ( ' \
           '  select theme_number, theme_name, count_question, true_score, false_score ' \
           '  from ( ' \
@@ -313,4 +298,24 @@ def get_result_by_date(dat):
           'order by fio '
     cursor.execute(cmd, [dat])
     cursor.rowfactory = ResultList
+    return cursor
+
+
+def get_full_result(id_registration):
+    if cfg.debug_level > 2:
+        print('Get Full Result: id_registration' + str(id_registration))
+    con = get_connection()
+    cursor = con.cursor()
+    cmd = "select descr as theme_name, qft.id_question, qft.order_num_question, question, correctly, answer " \
+          "from  testing t, themes_for_testing tft, themes th, questions_for_testing qft, questions q, answers a " \
+          "where t.id_registration=:id " \
+          "and   tft.id_registration=t.id_registration " \
+          "and   th.id_theme=tft.id_theme " \
+          "and   qft.id_registration=t.id_registration " \
+          "and   qft.id_theme=tft.id_theme " \
+          "and   qft.id_question=q.id_question " \
+          "and   a.id_answer=qft.id_answer " \
+          "order by tft.theme_number, qft.order_num_question"
+    cursor.execute(cmd, [id_registration])
+    cursor.rowfactory = ResultFullF
     return cursor

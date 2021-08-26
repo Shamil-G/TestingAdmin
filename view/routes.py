@@ -3,7 +3,7 @@ from flask import render_template, request, redirect, g, flash
 from flask_login import login_required
 from reports.load_theme import load_theme, load_persons
 from model.dml_models import *
-from reports.print_personal_report import *
+from reports.print_full_personal_report import *
 from reports.print_date_report import *
 import cx_Oracle
 from datetime import datetime
@@ -182,3 +182,20 @@ def view_results():
         if file_name:
             return redirect(url_for('uploaded_file', filename=file_name))
     return render_template("results.html")
+
+
+@app.route('/result-full', methods=['POST', 'GET'])
+def view_results_full():
+    file_name = ''
+    if request.method == "POST":
+        iin = request.form['iin']
+        print('view_results by iin: ' + str(iin))
+        iin2 = request.form['iin2']
+        print('view_results by iin: ' + str(iin) + str(iin2))
+        if iin:
+            if cfg.debug_level > 2:
+                print('view_results by iin: ' + str(iin))
+            file_name = print_full_result_test_by_iin(iin)
+        if file_name:
+            return redirect(url_for('uploaded_file', filename=file_name))
+    return render_template("result-full.html")
